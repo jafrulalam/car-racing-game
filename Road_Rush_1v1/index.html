@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Road Rush 3D — Racing</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#87b8d8;font-family:Arial,Helvetica,sans-serif;color:#fff}
+#game{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}
+#hud{position:fixed;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(10px,2vw,24px)}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.brand,.stat{background:rgba(5,12,20,.68);border:1px solid #ffffff2a;box-shadow:0 8px 24px #0002;backdrop-filter:blur(12px);border-radius:14px;padding:11px 15px}
+.brand strong{display:block;letter-spacing:2px;color:#8af3ff;font-size:clamp(13px,2vw,20px)}.brand small{color:#d3e4ed;letter-spacing:1px}
+.stats{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.stat{min-width:85px}.label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#b8cbd6}.num{font-size:clamp(18px,2.8vw,28px);font-weight:900;margin-top:3px}
+#soundToggle{pointer-events:auto;border:1px solid #ffffff35;color:#fff;background:#0b1625cc;border-radius:11px;padding:11px 13px;font-weight:bold;cursor:pointer}
+#pause{pointer-events:auto;border:1px solid #ffffff35;color:#fff;background:#0b1625cc;border-radius:11px;padding:11px 13px;font-weight:bold;cursor:pointer}
+#bottom{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}.hint{background:#07111d9c;border:1px solid #ffffff20;border-radius:12px;padding:10px 13px;color:#d5e2eb;font-size:12px;line-height:1.5}
+#message{position:fixed;left:50%;top:28%;transform:translate(-50%,-50%);text-align:center;font-size:clamp(32px,7vw,76px);font-weight:1000;letter-spacing:3px;text-shadow:0 5px 24px #000b;pointer-events:none}
+#message small{display:block;font-size:13px;letter-spacing:2px;color:#e1eef4;margin-top:8px}
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:linear-gradient(115deg,#07121ed9,#08111d55)}
+.card{width:min(500px,100%);padding:30px;border-radius:24px;border:1px solid #ffffff32;background:rgba(5,12,20,.91);box-shadow:0 30px 100px #0009;backdrop-filter:blur(16px);text-align:center}
+.kicker{color:#8af3ff;font-size:11px;letter-spacing:4px;font-weight:900}h1{font-size:clamp(37px,8vw,66px);line-height:.94;margin:14px 0 12px;letter-spacing:-2px}h1 span{color:#ffd65a}.desc{color:#c0cfda;font-size:14px;line-height:1.65}
+button.primary{width:100%;margin-top:12px;border:0;border-radius:13px;padding:15px;background:linear-gradient(100deg,#9af5ff,#54cbe6);color:#07141c;font-weight:1000;letter-spacing:1px;font-size:15px;cursor:pointer}
+.keys{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px;text-align:left}.keys div{background:#ffffff0c;border:1px solid #ffffff14;border-radius:10px;padding:10px;font-size:12px;color:#d9e5ec}
+kbd{background:#f1f7fa;color:#14212b;padding:3px 6px;border-radius:4px;font-weight:900;margin-right:3px}
+#touch{position:fixed;bottom:18px;left:0;right:0;display:none;justify-content:space-between;padding:0 16px;pointer-events:none}
+.group{display:flex;gap:8px;pointer-events:auto}.touchbtn{height:58px;min-width:58px;border-radius:17px;background:#081522b8;border:1px solid #ffffff55;color:white;font-size:23px;font-weight:bold;touch-action:none}.gas{background:#f4c94b;color:#111}.brake{background:#c94747}
+@media(max-width:700px),(pointer:coarse){#touch{display:flex}.hint{display:none}.stat{min-width:68px;padding:8px}.label{font-size:8px}.num{font-size:18px}.top{align-items:flex-start}.brand{padding:9px}.card{padding:23px}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="hud">
+ <div class="top">
+  <div class="brand"><strong>ROAD RUSH 3D</strong><small>COUNTRYSIDE GRAND PRIX</small></div>
+  <div class="stats">
+   <div class="stat"><div class="label">Speed</div><div class="num"><span id="speed">0</span> <small style="font-size:10px">KM/H</small></div></div>
+   <div class="stat"><div class="label">Position</div><div class="num" id="pos">1 / 2</div></div>
+   <div class="stat"><div class="label">Distance</div><div class="num"><span id="distance">0</span><small style="font-size:10px"> / 1000 M</small></div></div><div class="stat"><div class="label">Race time</div><div class="num" id="time">00:00</div></div>
+   <button id="soundToggle" title="Toggle sound">🔊 SOUND ON</button><button id="pause">Ⅱ</button>
+  </div>
+ </div>
+ <div id="bottom"><div class="hint"><b>W / ↑</b> Accelerate &nbsp; <b>S / ↓</b> Brake<br><b>A / ←</b> Steer left &nbsp; <b>D / →</b> Steer right</div><div class="hint">1V1 RACE · BEAT THE AI</div></div>
+</div>
+<div id="message"></div>
+<div id="touch">
+ <div class="group"><button class="touchbtn" data-k="left">◀</button><button class="touchbtn" data-k="right">▶</button></div>
+ <div class="group"><button class="touchbtn brake" data-k="brake">▼</button><button class="touchbtn gas" data-k="gas">▲</button></div>
+</div>
+<div class="overlay" id="start">
+ <div class="card"><div class="kicker">YOU VS AI. ONE WINNER.</div><h1>ROAD <span>RUSH</span></h1><p class="desc">A 3D chase-camera racing game. Your car moves forward when you accelerate. Race head-to-head against one automatic AI driver. Reach the visible checkered finish line first to win.</p><button class="primary" id="startBtn">START ENGINE & RACE →</button><div class="keys"><div><kbd>W</kbd><kbd>↑</kbd> Accelerate</div><div><kbd>S</kbd><kbd>↓</kbd> Brake</div><div><kbd>A</kbd><kbd>←</kbd> Steer left</div><div><kbd>D</kbd><kbd>→</kbd> Steer right</div></div><p class="desc" style="font-size:11px;margin-bottom:0">For best graphics, open in Chrome or Edge with internet access.</p></div>
+</div>
+<div class="overlay" id="finish" style="display:none"><div class="card"><div class="kicker">CHECKERED FLAG</div><h1 id="finishTitle">RACE <span>OVER</span></h1><p id="finishText" class="desc"></p><button class="primary" id="again">RACE AGAIN ↻</button></div></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js';
+const root=document.getElementById('game');
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9bcce9);scene.fog=new THREE.Fog(0x9bcce9,100,430);
+const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,900);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;root.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xe6f6ff,0x435b32,2.0));
+const sun=new THREE.DirectionalLight(0xfff1d1,3.2);sun.position.set(-70,110,-20);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=120;sun.shadow.camera.bottom=-120;scene.add(sun);
+const mat=(color,rough=.8,metal=0)=>new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal});
+const grassMat=mat(0x477d38),grassLight=mat(0x568e40),asphalt=mat(0x30353b,.94),lineMat=mat(0xf4f0d9),curbRed=mat(0xc9443c),curbWhite=mat(0xe9e6dc),trunkMat=mat(0x59412a),leafMats=[mat(0x214d2a),mat(0x2e6334),mat(0x3b743c)];
+function box(parent,w,h,d,material,x=0,y=0,z=0){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
+function cylinder(parent,r1,r2,h,material,x,y,z,seg=8){const m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,seg),material);m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m}
+// Ground
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(1200,1200),grassMat);ground.rotation.x=-Math.PI/2;ground.position.y=-.15;ground.receiveShadow=true;scene.add(ground);
+// textured ground patches for visual depth
+for(let i=0;i<80;i++){let p=new THREE.Mesh(new THREE.PlaneGeometry(5+Math.random()*15,4+Math.random()*18),i%2?grassMat:grassLight);p.rotation.x=-Math.PI/2;p.position.set((Math.random()-.5)*180,-.13,-Math.random()*900+100);scene.add(p)}
+// Endless straight country road made from reusable segments
+const SEG=80,ROAD_W=18,segments=[];
+for(let i=0;i<12;i++){
+ const g=new THREE.Group();g.position.z=-i*SEG;scene.add(g);
+ const road=new THREE.Mesh(new THREE.PlaneGeometry(ROAD_W,SEG),asphalt);road.rotation.x=-Math.PI/2;road.position.y=.015;road.receiveShadow=true;g.add(road);
+ // shoulders and edge strips
+ for(const side of [-1,1]){
+  const shoulder=new THREE.Mesh(new THREE.PlaneGeometry(1.2,SEG),curbWhite);shoulder.rotation.x=-Math.PI/2;shoulder.position.set(side*(ROAD_W/2+.55),.025,0);g.add(shoulder);
+  for(let j=0;j<8;j++){const stripe=new THREE.Mesh(new THREE.PlaneGeometry(1.2,5),j%2?curbWhite:curbRed);stripe.rotation.x=-Math.PI/2;stripe.position.set(side*(ROAD_W/2+.55),.04,-SEG/2+j*10+2.5);g.add(stripe)}
+  const edge=new THREE.Mesh(new THREE.PlaneGeometry(.16,SEG),lineMat);edge.rotation.x=-Math.PI/2;edge.position.set(side*(ROAD_W/2-.45),.035,0);g.add(edge);
+ }
+ // lane dividers
+ for(let j=0;j<10;j++){const dash=new THREE.Mesh(new THREE.PlaneGeometry(.16,4.6),lineMat);dash.rotation.x=-Math.PI/2;dash.position.set(0,.04,-SEG/2+j*8+4);g.add(dash)}
+ segments.push(g);
+}
+// detailed roadside trees and shrubs
+const scenery=[];
+function makeTree(x,z,scale){
+ const g=new THREE.Group();g.position.set(x,0,z);g.scale.setScalar(scale);
+ cylinder(g,.25,.38,2.7,trunkMat,0,1.3,0,7);
+ const l1=cylinder(g,0,1.45,2.7,leafMats[Math.floor(Math.random()*3)],0,3.1,0,7);l1.rotation.x=.04;
+ const l2=cylinder(g,0,1.1,2.2,leafMats[Math.floor(Math.random()*3)],0,4.15,0,7);
+ const l3=cylinder(g,0,.72,1.6,leafMats[Math.floor(Math.random()*3)],0,5,0,7);
+ scene.add(g);scenery.push({obj:g,baseZ:z});
+}
+for(let i=0;i<58;i++){let z=-(i*17+Math.random()*10);makeTree(-14-Math.random()*18,z,.65+Math.random()*.85);makeTree(14+Math.random()*18,z-7,.65+Math.random()*.9)}
+// Visible checkered finish line: approaches the cars as race distance advances
+const finishGroup=new THREE.Group();scene.add(finishGroup);
+const finishDark=mat(0x101820,.7),finishLight=mat(0xffffff,.7);
+const tileW=ROAD_W/12;
+for(let row=0;row<2;row++)for(let col=0;col<12;col++){
+ const tile=new THREE.Mesh(new THREE.PlaneGeometry(tileW,2.2),((row+col)%2===0)?finishLight:finishDark);
+ tile.rotation.x=-Math.PI/2;tile.position.set(-ROAD_W/2+tileW*(col+.5),.065,-1.1+row*2.2);finishGroup.add(tile);
+}
+const bannerMat=mat(0x142433,.45,.1);
+box(finishGroup,ROAD_W,.18,.22,bannerMat,0,5.8,0);
+for(const x of [-ROAD_W/2,ROAD_W/2])box(finishGroup,.22,5.9,.22,finishLight,x,2.85,0);
+// High-contrast FINISH lettering on the overhead gantry
+const signCanvas=document.createElement('canvas');signCanvas.width=512;signCanvas.height=128;
+const signCtx=signCanvas.getContext('2d');signCtx.fillStyle='#111820';signCtx.fillRect(0,0,512,128);
+signCtx.fillStyle='#ffffff';signCtx.font='900 76px Arial';signCtx.textAlign='center';signCtx.textBaseline='middle';signCtx.fillText('FINISH',256,66);
+const signTexture=new THREE.CanvasTexture(signCanvas);signTexture.colorSpace=THREE.SRGBColorSpace;
+const sign=new THREE.Mesh(new THREE.PlaneGeometry(7,1.75),new THREE.MeshBasicMaterial({map:signTexture,side:THREE.DoubleSide}));
+sign.position.set(0,5.05,.14);finishGroup.add(sign);
+finishGroup.position.z=-1000;
+function makeCar(color,player=false){
+ const g=new THREE.Group();const bodyMat=new THREE.MeshPhysicalMaterial({color,metalness:.48,roughness:.27,clearcoat:.9,clearcoatRoughness:.18});
+ const dark=mat(0x111820,.5,.15),glass=new THREE.MeshPhysicalMaterial({color:0x183142,metalness:.45,roughness:.16,clearcoat:.8}),rubber=mat(0x101114,.9),rim=mat(0xaebbc1,.25,.8),lamp=new THREE.MeshStandardMaterial({color:0xfff0be,emissive:0xffd76a,emissiveIntensity:1.4}),tail=new THREE.MeshStandardMaterial({color:0xff2820,emissive:0xd50000,emissiveIntensity:1.4});
+ // coordinate: front points toward negative z
+ box(g,2.15,.55,4.25,bodyMat,0,.72,0);
+ box(g,1.65,.63,1.95,bodyMat,0,1.15,-.35);
+ const cabin=box(g,1.48,.52,1.55,glass,0,1.52,-.35);cabin.rotation.x=-.04;
+ box(g,1.53,.08,1.63,dark,0,1.79,-.35);
+ // bonnet highlight and bumpers
+ box(g,1.5,.035,1.05,new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.2}),0,1.02,-1.25);
+ box(g,2.03,.19,.18,dark,0,.49,-2.06);box(g,2.03,.18,.18,dark,0,.49,2.06);
+ for(const x of [-.86,.86])for(const z of [-1.35,1.35]){
+  const tire=new THREE.Mesh(new THREE.CylinderGeometry(.39,.39,.24,20),rubber);tire.rotation.z=Math.PI/2;tire.position.set(x,.43,z);tire.castShadow=true;g.add(tire);
+  const wheelhub=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.255,16),rim);wheelhub.rotation.z=Math.PI/2;wheelhub.position.set(x*1.01,.43,z);g.add(wheelhub);
+  for(let q=0;q<5;q++){const spoke=box(g,.27,.035,.035,lineMat,x*1.02,.43,z);spoke.rotation.y=q*Math.PI/5}
+ }
+ for(const x of [-.68,.68]){box(g,.36,.13,.06,lamp,x,.77,-2.14);box(g,.34,.13,.06,tail,x,.77,2.14)}
+ // mirrors
+ for(const x of [-1.12,1.12])box(g,.25,.14,.22,bodyMat,x,1.25,-.65);
+ // spoiler on rivals / sporty detail
+ if(!player){box(g,1.7,.12,.25,dark,0,1.5,1.72);for(const x of [-.58,.58])box(g,.1,.26,.12,dark,x,1.38,1.72)}
+ g.userData={player};scene.add(g);return g;
+}
+const player=makeCar(0x087fdb,true);const ai1=makeCar(0xe6322b,false);
+player.position.set(-3,0,7);ai1.position.set(3,0,-14);
+const key={left:false,right:false,gas:false,brake:false};
+let active=false,paused=false,done=false,playerSpeed=0,playerDist=0,aiDist=[0],raceStart=0,elapsed=0,countdown=0,last=performance.now(),shake=0;
+// Procedural game audio (no extra files or downloads required).
+let audioCtx=null, masterGain=null, engineOsc1=null, engineOsc2=null, engineGain=null, aiOsc=null, aiGain=null, soundEnabled=true, lastBeep=0;
+function initAudio(){
+ if(audioCtx){if(audioCtx.state==='suspended')audioCtx.resume();return}
+ try{
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  masterGain=audioCtx.createGain();masterGain.gain.value=soundEnabled?.48:0;masterGain.connect(audioCtx.destination);
+  engineOsc1=audioCtx.createOscillator();engineOsc1.type='sawtooth';
+  const engineFilter=audioCtx.createBiquadFilter();engineFilter.type='lowpass';engineFilter.frequency.value=480;
+  engineOsc2=audioCtx.createOscillator();engineOsc2.type='triangle';engineOsc2.frequency.value=42;
+  engineGain=audioCtx.createGain();engineGain.gain.value=.0001;
+  engineOsc1.connect(engineFilter);engineFilter.connect(engineGain);engineOsc2.connect(engineGain);engineGain.connect(masterGain);
+  // AI rival: softer, low-pitched engine rumble instead of the harsh buzzy tone.
+  aiOsc=audioCtx.createOscillator();aiOsc.type='triangle';aiOsc.frequency.value=58;
+  const aiFilter=audioCtx.createBiquadFilter();aiFilter.type='lowpass';aiFilter.frequency.value=190;aiFilter.Q.value=.45;
+  aiGain=audioCtx.createGain();aiGain.gain.value=.0001;aiOsc.connect(aiFilter);aiFilter.connect(aiGain);aiGain.connect(masterGain);
+  engineOsc1.start();engineOsc2.start();aiOsc.start();
+ }catch(e){console.warn('Audio is not available in this browser',e)}
+}
+function setParam(param,value,tc=.08){if(audioCtx&&param)param.setTargetAtTime(Math.max(.0001,value),audioCtx.currentTime,tc)}
+function tone(freq=440,duration=.15,wave='sine',volume=.18,delay=0){
+ if(!soundEnabled)return;initAudio();if(!audioCtx)return;
+ const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=wave;o.frequency.setValueAtTime(freq,audioCtx.currentTime+delay);g.gain.setValueAtTime(.0001,audioCtx.currentTime+delay);g.gain.exponentialRampToValueAtTime(Math.max(.001,volume),audioCtx.currentTime+delay+.015);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+delay+duration);o.connect(g);g.connect(masterGain);o.start(audioCtx.currentTime+delay);o.stop(audioCtx.currentTime+delay+duration+.03);
+}
+function noiseBurst(duration=.22,volume=.14){
+ if(!soundEnabled)return;initAudio();if(!audioCtx)return;
+ const n=Math.floor(audioCtx.sampleRate*duration),buf=audioCtx.createBuffer(1,n,audioCtx.sampleRate),data=buf.getChannelData(0);for(let i=0;i<n;i++)data[i]=(Math.random()*2-1)*(1-i/n);
+ const src=audioCtx.createBufferSource(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter();src.buffer=buf;f.type='lowpass';f.frequency.value=520;g.gain.value=volume;src.connect(f);f.connect(g);g.connect(masterGain);src.start();
+}
+function updateAudio(){
+ if(!audioCtx||!soundEnabled)return;
+ const moving=active&&!paused&&!done&&countdown<=0;
+ const speed=Math.max(0,playerSpeed);
+ // Remove the unpleasant player-car movement/engine loop entirely.
+ setParam(engineGain.gain,.0001,.08);
+ // Rival engine has a mellow low rumble. Its volume fades naturally with distance,
+ // whether the AI is ahead of or behind the player.
+ const gap=Math.abs(playerDist-(aiDist[0]||0));
+ const distanceVolume=Math.max(.0001,.052*Math.exp(-gap/115));
+ setParam(aiOsc.frequency,48+Math.min(55,AI_SPEED)*.48+Math.min(12,speed*.08),.22);
+ setParam(aiGain.gain,moving?distanceVolume:.0001,.32);
+}
+const MAX=78,FINISH=1000,AI_SPEED=200/3.6;
+function reset(){initAudio();tone(110,.32,'sawtooth',.2);setTimeout(()=>tone(165,.28,'sawtooth',.16),110);active=true;paused=false;done=false;playerSpeed=0;playerDist=0;aiDist=[0];player.position.set(-3,0,7);player.rotation.set(0,0,0);ai1.position.set(3,0,-14);ai1.rotation.set(0,0,0);segments.forEach((s,i)=>s.position.z=-i*SEG);scenery.forEach(t=>t.obj.position.z=t.baseZ);finishGroup.position.z=7-FINISH;raceStart=performance.now();elapsed=0;countdown=3;document.getElementById('start').style.display='none';document.getElementById('finish').style.display='none';document.getElementById('message').innerHTML='3<small>GET READY</small>';document.getElementById('pause').textContent='Ⅱ'}
+document.getElementById('startBtn').onclick=reset;document.getElementById('again').onclick=reset;
+document.getElementById('soundToggle').onclick=()=>{soundEnabled=!soundEnabled;document.getElementById('soundToggle').textContent=soundEnabled?'🔊 SOUND ON':'🔇 SOUND OFF';if(soundEnabled){initAudio();tone(720,.12,'sine',.12)}else if(masterGain)masterGain.gain.setTargetAtTime(0,audioCtx.currentTime,.04);if(soundEnabled&&masterGain)masterGain.gain.setTargetAtTime(.48,audioCtx.currentTime,.05)};
+document.getElementById('pause').onclick=()=>{if(!active||done)return;initAudio();tone(paused?650:280,.09,'square',.08);paused=!paused;document.getElementById('pause').textContent=paused?'▶':'Ⅱ';document.getElementById('message').innerHTML=paused?'PAUSED<small>Press play to resume</small>':''};
+addEventListener('keydown',e=>{let k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if(k==='a'||k==='arrowleft')key.left=true;if(k==='d'||k==='arrowright')key.right=true;if(k==='w'||k==='arrowup')key.gas=true;if(k==='s'||k==='arrowdown')key.brake=true;if(k===' '&&active&&!done)paused=!paused});
+addEventListener('keyup',e=>{let k=e.key.toLowerCase();if(k==='a'||k==='arrowleft')key.left=false;if(k==='d'||k==='arrowright')key.right=false;if(k==='w'||k==='arrowup')key.gas=false;if(k==='s'||k==='arrowdown')key.brake=false});
+document.querySelectorAll('[data-k]').forEach(b=>{const k=b.dataset.k;const down=e=>{e.preventDefault();key[k]=true},up=e=>{e.preventDefault();key[k]=false};b.addEventListener('pointerdown',down);b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('pointerleave',up)});
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0')}
+function finish(win){done=true;if(win){tone(660,.22,'triangle',.18);tone(880,.28,'triangle',.18,.2);tone(1100,.42,'triangle',.18,.42)}else{tone(300,.35,'sawtooth',.16);tone(220,.5,'sawtooth',.14,.28)};document.getElementById('finish').style.display='flex';document.getElementById('finishTitle').innerHTML=win?'YOU <span>WIN!</span>':'RACE <span>OVER</span>';document.getElementById('finishText').textContent=win?'Excellent driving! You won the race in '+fmt(elapsed)+'.':'An AI driver finished first. Accelerate early and steer smoothly to try again.';document.getElementById('message').textContent=''}
+function update(dt){
+ if(!active||paused||done){updateAudio();return;}
+ if(countdown>0){countdown-=dt;const stage=countdown>2?3:countdown>1?2:countdown>.05?1:0;if(stage!==lastBeep){lastBeep=stage;if(stage>0)tone(stage===1?660:520,.13,'square',.12);else{tone(880,.32,'square',.16);tone(440,.4,'sawtooth',.1,.04)}}document.getElementById('message').innerHTML=countdown>2?'3<small>GET READY</small>':countdown>1?'2<small>HOLD YOUR LINE</small>':countdown>.05?'1<small>GO GO GO</small>':'GO!';updateAudio();return}
+ document.getElementById('message').textContent='';
+ const accel=key.gas?39:0,brake=key.brake?58:0;
+ playerSpeed=THREE.MathUtils.clamp(playerSpeed+(accel-brake-(key.gas?0:8)-playerSpeed*.025)*dt,0,MAX);
+ const steer=(key.right?1:0)-(key.left?1:0);
+ player.position.x+=steer*(5.2+playerSpeed*.06)*dt;
+ player.position.x=THREE.MathUtils.clamp(player.position.x,-7.2,7.2);
+ player.rotation.z=THREE.MathUtils.damp(player.rotation.z,-steer*.075,5,dt);
+ // The world scrolls toward the camera according to the player's speed: accelerating visibly advances the player through the course.
+ const move=playerSpeed*dt;playerDist+=move;elapsed=Math.max(0,(performance.now()-raceStart)/1000-3);
+ for(const s of segments){s.position.z+=move;if(s.position.z>SEG)s.position.z-=SEG*segments.length}finishGroup.position.z+=move;
+ for(const t of scenery){t.obj.position.z+=move;if(t.obj.position.z>22)t.obj.position.z-=58*17}
+ // Rivals race by themselves, with gentle lane changes and different speed profiles
+ const ais=[ai1];ais.forEach((car,i)=>{const v=AI_SPEED+Math.sin(elapsed*.35+i*2)*0.8;aiDist[i]+=v*dt;
+  // Derive the rival's relative position from race distance. Never teleport/wrap it,
+  // so the AI car stays smoothly in front of or behind the player without popping.
+  car.position.z=player.position.z-21+playerDist-aiDist[i];
+  car.position.x=3.0+Math.sin(elapsed*.22)*.45;car.position.x=THREE.MathUtils.clamp(car.position.x,-6.2,6.2);car.rotation.z=Math.sin(elapsed*.22)*.018;
+ });
+ // Collision sound only on the frame an impact begins
+ let collided=false;for(const car of ais){if(Math.abs(car.position.z-player.position.z)<3.8&&Math.abs(car.position.x-player.position.x)<2.1){playerSpeed=Math.max(8,playerSpeed*.72);if(!car.userData.hitSound){collided=true;car.userData.hitSound=true}car.position.z-=1.5}else{car.userData.hitSound=false}}if(collided){noiseBurst(.24,.22);tone(95,.2,'sawtooth',.16)}
+ // Off-road slowdown
+ if(Math.abs(player.position.x)>6.1)playerSpeed=Math.max(9,playerSpeed-20*dt);
+ // camera follows car and looks down the road
+ camera.position.x=THREE.MathUtils.damp(camera.position.x,player.position.x*.42,2.5,dt);
+ camera.position.y=7.2+playerSpeed*.008;camera.position.z=16.5;
+ camera.lookAt(player.position.x*.25,1.0,-20);
+ const rank=1+aiDist.filter(d=>d>playerDist).length;
+ document.getElementById('speed').textContent=Math.round(playerSpeed*3.6);
+ document.getElementById('pos').textContent=rank+' / 2';
+ document.getElementById('time').textContent=fmt(elapsed);
+ document.getElementById('distance').textContent=Math.min(FINISH,Math.floor(playerDist)).toLocaleString('en-IN');
+ if(playerDist>=FINISH){finish(true);return}
+ if(aiDist.some(d=>d>=FINISH)){finish(false);return}
+ updateAudio();
+}
+function animate(now){requestAnimationFrame(animate);const dt=Math.min(.04,(now-last)/1000);last=now;update(dt);renderer.render(scene,camera)}
+requestAnimationFrame(animate);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2))});
+</script>
+</body>
+</html>
